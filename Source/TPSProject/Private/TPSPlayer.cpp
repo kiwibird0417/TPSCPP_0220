@@ -9,6 +9,7 @@
 #include "Bullet.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "EnemyFSM.h"
 
 // Sets default values
 ATPSPlayer::ATPSPlayer()
@@ -233,6 +234,13 @@ void ATPSPlayer::InputFire( const FInputActionValue& inputValue )
 				hitComp->AddForceAtLocation(force, hitInfo.ImpactPoint);
 			}
 
+			// 부딪힌 대상이 적인지 체크
+			auto enemy = hitInfo.GetActor()->GetDefaultSubobjectByName( TEXT("FSM") );
+			if( enemy )
+			{
+				auto enemyFSM = Cast<UEnemyFSM>(enemy);
+				enemyFSM->OnDamageProcess();
+			}
 		}
 	}
 }
