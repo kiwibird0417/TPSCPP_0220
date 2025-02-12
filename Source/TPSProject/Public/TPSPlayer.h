@@ -131,7 +131,11 @@ public:
 
 	// 이동 속도
 	UPROPERTY( EditAnywhere, Category = PlayerSetting )
-	float WalkSpeed = 600.0f;
+	float WalkSpeed = 200.0f;
+
+	// 달리기 속도
+	UPROPERTY( EditAnywhere, Category = PlayerSetting )
+	float RunSpeed = 600.0f;
 
 	// 이동 방향
 	FVector Direction;
@@ -143,6 +147,13 @@ public:
 	class UInputAction* IA_Jump;
 
 	void InputJump(const FInputActionValue& inputValue);
+
+
+	// 달리기
+	UPROPERTY( EditDefaultsOnly, Category = "Input" )
+	class UInputAction* IA_Run;
+
+	void InputRun();
 
 
 

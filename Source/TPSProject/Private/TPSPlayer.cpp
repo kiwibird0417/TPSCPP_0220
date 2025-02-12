@@ -10,6 +10,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "EnemyFSM.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "TPSPlayerAnimInstance.h"
 
 // Sets default values
 ATPSPlayer::ATPSPlayer()
@@ -110,6 +112,9 @@ void ATPSPlayer::BeginPlay()
 		}
 	}	
 
+	// 초기속도를 걷기로 설정
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;	
+
 	//JumpMaxCount = 3;
 
 	// 스나이퍼 UI 위젯 인스턴스 생성
@@ -171,11 +176,19 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		PlayerInput->BindAction( IA_Sniper, ETriggerEvent::Started, this, &ATPSPlayer::SniperAim);
 		PlayerInput->BindAction( IA_Sniper , ETriggerEvent::Completed, this , &ATPSPlayer::SniperAim );
 
+		// 달리기 입력 이벤트 처리 함수 바인딩
+		PlayerInput->BindAction( IA_Run, ETriggerEvent::Started, this, &ATPSPlayer::InputRun);
+		PlayerInput->BindAction( IA_Run , ETriggerEvent::Completed, this , &ATPSPlayer::InputRun );
+
 	}
 }
 
 void ATPSPlayer::InputFire( const FInputActionValue& inputValue )
 {
+	// 공격 애니메이션 재생
+	auto anim = Cast<UTPSPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	anim->PlayAttackAnim();
+
 	// 유탄총 사용 시
 	if( bUsingGrenadeGun == true )
 	{
@@ -320,5 +333,22 @@ void ATPSPlayer::Move( const FInputActionValue& inputValue )
 void ATPSPlayer::InputJump( const FInputActionValue& inputValue )
 {
 	Jump();
+}
+
+void ATPSPlayer::InputRun()
+{
+	auto movement = GetCharacterMovement();
+	if( movement == nullptr )	return;
+
+	// 현재 달리기 모드면
+	if( movement->MaxWalkSpeed > WalkSpeed )
+	{
+		// 걷기 속도로 전환
+		movement->MaxWalkSpeed = WalkSpeed;
+	}
+	else
+	{
+		movement->MaxWalkSpeed = RunSpeed;
+	}
 }
 
