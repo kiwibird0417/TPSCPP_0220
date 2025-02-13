@@ -20,7 +20,7 @@ ATPSPlayer::ATPSPlayer()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Mesh에 퀸을 로드해서 넣고싶다.
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempMesh(TEXT("/ Script / Engine.SkeletalMesh'/Game/Characters/Mannequin_UE4/Meshes/SK_Mannequin.SK_Mannequin'"));
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/Mannequins/Meshes/SKM_Quinn.SKM_Quinn'"));
 
 	// 만약 파일읽기가 성공했다면
 	if( TempMesh.Succeeded() )
@@ -69,11 +69,20 @@ ATPSPlayer::ATPSPlayer()
 		GunMeshComp->SetRelativeLocation( FVector( 0.0f, 60.0f, 120.0f ) );
 	}
 
+	// Mesh의 AnimInstace를 파일로 로드해서 적용하고 싶다.
+	ConstructorHelpers::FClassFinder<UTPSPlayerAnimInstance> TempAnimInst(TEXT("/Script/Engine.AnimBlueprint'/Game/NYS/Blueprints/Anim/ABP_TPSPlayer.ABP_TPSPlayer_C'"));
+
+	// 만약 파일읽기를 성공했다면
+	if( TempAnimInst.Succeeded() )
+	{
+		GetMesh()->SetAnimInstanceClass(TempAnimInst.Class);
+	}
+
 	// 스나이퍼건 컴포넌트 등록
 	SniperGunMesh = CreateDefaultSubobject<UStaticMeshComponent>( TEXT("SniperGunMesh") );
 
 	// 부모 컴포넌트를 Mesh 컴포넌트로 설정
-	SniperGunMesh->SetupAttachment( GetMesh() );
+	SniperGunMesh->SetupAttachment( GetMesh(), TEXT("hand_rSocket") );
 
 	// 스태틱 메시 데이터 로드
 	ConstructorHelpers::FObjectFinder<UStaticMesh> TempSniperMesh( TEXT("/Script/Engine.StaticMesh'/Game/SniperGun/sniper11.sniper11'") );
@@ -85,21 +94,29 @@ ATPSPlayer::ATPSPlayer()
 		SniperGunMesh->SetStaticMesh(TempSniperMesh.Object);
 
 		// 총 위치 설정
-		SniperGunMesh->SetRelativeLocation( FVector( 0.0f, 50.0f, 120.0f ) );
+		SniperGunMesh->SetRelativeLocationAndRotation( FVector( -37.0f, -5.6f, 3.0f ), FRotator( 0.0f, 110.0f, 0.0f ) );
 
 		// 총 크기 설정
 		SniperGunMesh->SetRelativeScale3D( FVector( 0.15f ) );
 	}
 
+	// 총알 사운드 가져오기
+	ConstructorHelpers::FObjectFinder<USoundBase> TempSound(TEXT("/Script/Engine.SoundWave'/Game/SniperGun/Rifle.Rifle'"));
+	if( TempSound.Succeeded() )
+	{
+		BulletSound = TempSound.Object;
+	}
 
-
-	
+	// 쭈그리기를 활성화 하고 싶다.
+	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 }
 
 // Called when the game starts or when spawned
 void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	Anim = Cast<UTPSPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 
 	auto pc = Cast<APlayerController>(Controller);
 	if( pc )
@@ -180,11 +197,19 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		PlayerInput->BindAction( IA_Run, ETriggerEvent::Started, this, &ATPSPlayer::InputRun);
 		PlayerInput->BindAction( IA_Run , ETriggerEvent::Completed, this , &ATPSPlayer::InputRun );
 
+		// 쪼그려 앉기
+		PlayerInput->BindAction( IA_CrouchCtrl, ETriggerEvent::Started, this, &ATPSPlayer::InputCrouchCtrl);
+		PlayerInput->BindAction( IA_CrouchCtrl , ETriggerEvent::Completed, this , &ATPSPlayer::InputUnCrouchUnCtrl );
+		PlayerInput->BindAction( IA_CrouchC, ETriggerEvent::Started, this, &ATPSPlayer::InputCrouchToggle);
 	}
 }
 
 void ATPSPlayer::InputFire( const FInputActionValue& inputValue )
 {
+	// 카메라 셰이크 재생
+	auto controller = GetWorld()->GetFirstPlayerController();
+	controller->PlayerCameraManager->StartCameraShake(CameraShake);
+
 	// 공격 애니메이션 재생
 	auto anim = Cast<UTPSPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 	anim->PlayAttackAnim();
@@ -200,6 +225,9 @@ void ATPSPlayer::InputFire( const FInputActionValue& inputValue )
 	// 스나이퍼건 사용 시
 	else
 	{
+		// 발사 사운드
+		UGameplayStatics::PlaySound2D(GetWorld(), BulletSound);
+		
 		// LineTrace 의 시작위치
 		FVector startPos = tpsCamComp->GetComponentLocation();
 
@@ -349,6 +377,32 @@ void ATPSPlayer::InputRun()
 	else
 	{
 		movement->MaxWalkSpeed = RunSpeed;
+	}
+}
+
+void ATPSPlayer::InputCrouchCtrl()
+{
+	Anim->IsCrouched = true;
+	Crouch();
+}
+
+void ATPSPlayer::InputUnCrouchUnCtrl()
+{
+	Anim->IsCrouched = false;
+	UnCrouch();
+}
+
+void ATPSPlayer::InputCrouchToggle()
+{
+	bCrouched = !bCrouched;
+	Anim->IsCrouched = bCrouched;
+	if( bCrouched == true )
+	{
+		Crouch();
+	}
+	else
+	{
+		UnCrouch();
 	}
 }
 

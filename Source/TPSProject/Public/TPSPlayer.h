@@ -156,5 +156,29 @@ public:
 	void InputRun();
 
 
+	// 쪼그려 걷기
+	// LCtrl 버튼을 누르고 있으면 쪼그리기, 떼면 해제
+	// C 버튼을 누르면 쪼그리기, 다시 누르면 해제
+	UPROPERTY( EditDefaultsOnly, Category = "Input" )
+	class UInputAction* IA_CrouchCtrl;
+	void InputCrouchCtrl();
+	void InputUnCrouchUnCtrl();
 
+	UPROPERTY( EditDefaultsOnly, Category = "Input" )
+	class UInputAction* IA_CrouchC;
+	void InputCrouchToggle();
+
+	bool bCrouched = false;
+
+	UPROPERTY()
+	class UTPSPlayerAnimInstance* Anim;
+
+
+	// 카메라 셰이크 블루프린트를 저장할 변수
+	UPROPERTY(EditDefaultsOnly, Category = CameraMotion)
+	TSubclassOf<class UCameraShakeBase> CameraShake;
+
+	// 총알 발사 사운드
+	UPROPERTY(EditDefaultsOnly, Category = Sound )
+	class USoundBase* BulletSound;
 };

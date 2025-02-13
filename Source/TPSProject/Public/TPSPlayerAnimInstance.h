@@ -32,6 +32,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = TPSPlayerAnim)
 	bool isInAir = false;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = TPSPlayerAnim)
+	bool IsCrouched = false;
+
 
 	// 재생할 공격 애니메이션 몽타주
 	UPROPERTY( EditDefaultsOnly, Category = TPSPlayerAnim )
