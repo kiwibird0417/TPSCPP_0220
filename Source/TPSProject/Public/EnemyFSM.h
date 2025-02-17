@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
 #include "EnemyFSM.generated.h"
 
 // 사용할 상태 정의
@@ -81,7 +82,7 @@ public:
 
 
 	// 피격 알림 이벤트 함수
-	void OnDamageProcess();
+	void OnDamageProcess(int32 damage);
 
 	// 체력
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = FSM)
@@ -100,8 +101,26 @@ public:
 	UPROPERTY()
 	class UEnemyAnim* Anim;
 
+	// Enemy를 소유하고 있는 AIController
+	UPROPERTY()
+	class AAIController* ai;
+
+
+	// 길찾기 수행시 랜덤 위치
+	FVector randomPos;
+	// 랜덤위치 가져오기
+	bool GetRandomPositionInNavMesh(FVector centerLocation, float radius, FVector& dest);
+
+
 
 	void OnAttackEnd();
-	
 
+	// 애니메이션 재생이 끝나면 아래로 내려가게 하고 싶다.
+	bool bDieDone = false;
+
+	// 원래는 이렇게 쓰지만
+	void OnDieEnd2();
+	
+	// INLINE 함수로 이렇게도 쓸 수 있다
+	FORCEINLINE void OnDieEnd() {	bDieDone = true;	}
 };

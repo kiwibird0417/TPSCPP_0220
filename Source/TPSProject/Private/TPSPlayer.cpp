@@ -280,7 +280,7 @@ void ATPSPlayer::InputFire( const FInputActionValue& inputValue )
 			if( enemy )
 			{
 				auto enemyFSM = Cast<UEnemyFSM>(enemy);
-				enemyFSM->OnDamageProcess();
+				enemyFSM->OnDamageProcess(1);
 			}
 		}
 	}

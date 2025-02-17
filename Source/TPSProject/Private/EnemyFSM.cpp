@@ -5,7 +5,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "TPSPlayer.h"
 #include "Enemy.h"
-
+#include <AIController.h>
+#include <NavigationSystem.h>
+#include "Navigation/PathFollowingComponent.h"
 #include "EnemyAnim.h"
 #include "TPSProject.h"
 #include "Components/CapsuleComponent.h"
@@ -38,6 +40,9 @@ void UEnemyFSM::BeginPlay()
 
 	// UEnemyAnim 할당
 	Anim = Cast<UEnemyAnim>(me->GetMesh()->GetAnimInstance());
+
+	// AIController 할당하기
+	ai = Cast<AAIController>( me->GetController() );
 }
 
 
@@ -77,6 +82,9 @@ void UEnemyFSM::IdleState()
 		
 		// 애니메이션 상태 동기화
 		Anim->AnimState = mState;
+
+		// 새로운 랜덤 위치 가져오기
+		GetRandomPositionInNavMesh( me->GetActorLocation() , 500.0f , randomPos );
 	}
 }
 
@@ -87,14 +95,53 @@ void UEnemyFSM::MoveState()
 
 	// 방향이 필요하다
 	FVector dir = destination - me->GetActorLocation();
+
+	auto ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+
+	// 목적지 길찾기 경로 데이터 검색
+	FPathFindingQuery query;
+	FAIMoveRequest req;
+
+	// 목적지에서 인지할 수 있는 범위
+	req.SetAcceptanceRadius( 3 );
+	req.SetGoalLocation( destination );
+
+	// 길 찾기를 위한 쿼리 생성
+	ai->BuildPathfindingQuery( req, query );
+
+	// 길 찾기 결과를 가져오기
+	FPathFindingResult r = ns->FindPathSync(query);
+
+	// 목적지까지 길 찾기 성공 여부 확인
+	if( r.Result == ENavigationQueryResult::Success )
+	{
+		// 타겟으로 이동
+		ai->MoveToLocation(destination);
+	}
+	else
+	{
+		// 랜덤 위치로 이동
+		auto result = ai->MoveToLocation(randomPos);
+
+		// 목적지에 도착하면
+		if( result == EPathFollowingRequestResult::AlreadyAtGoal )
+		{
+			// 새로운 랜덤 위치 가져오기
+			GetRandomPositionInNavMesh( me->GetActorLocation(), 500.0f, randomPos );
+		}
+	}
 	
 	// dir 방향으로 이동하고 싶다.
-	me->AddMovementInput(dir.GetSafeNormal());
+	//me->AddMovementInput(dir.GetSafeNormal());
+	//ai->MoveToLocation(destination);
 
 	// 타겟과 거리를 체크해서 attackRange 안으로 들어오면 공격상태로 전환 하고 싶다.
 	// 거리체크
 	if(dir.Size() < attackRange)
 	{
+		// 길 찾기 기능 정지
+		ai->StopMovement();
+
 		// 공격 상태로 전환하고 싶다.
 		mState = EEnemyState::Attack;
 
@@ -138,6 +185,9 @@ void UEnemyFSM::AttackState()
 
 		// 애니메이션 상태 동기화
 		Anim->AnimState = mState;
+
+		// 새로운 랜덤 위치 가져오기
+		GetRandomPositionInNavMesh( me->GetActorLocation() , 500.0f , randomPos );
 	}
 }
 
@@ -161,6 +211,12 @@ void UEnemyFSM::DamageState()
 
 void UEnemyFSM::DieState()
 {
+	// 애니메이션 재생이 끝나면 아래로 내려가게 하고 싶다.
+	if( bDieDone == false )
+	{
+		return;
+	}
+
 	// 계속 아래로 내려가고 싶다.
 	// P = P0 + vt
 	FVector P0 = me->GetActorLocation();
@@ -176,16 +232,20 @@ void UEnemyFSM::DieState()
 	}
 }
 
-void UEnemyFSM::OnDamageProcess()
+void UEnemyFSM::OnDamageProcess( int32 damage )
 {
 	// 체력 감소
-	hp--;
+	hp -= damage;
 
 	// 체력이 남아있는지 체크
 	if( hp > 0 )
 	{
 		// 상태를 피격으로 전환
 		mState = EEnemyState::Damage;
+
+		int randValue = FMath::RandRange(0, 1);
+		FString sectionName = FString::Printf(TEXT("Damage%d"), randValue);
+		me->PlayAnimMontage(Anim->EnemyMontage, 1.0f, FName(*sectionName));
 	}
 	else
 	{
@@ -193,8 +253,12 @@ void UEnemyFSM::OnDamageProcess()
 		mState = EEnemyState::Die;
 		// 캡슐 충돌체 비활성화
 		me->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		// 죽음 애니메이션 재생
+		me->PlayAnimMontage(Anim->EnemyMontage, 1.0f, TEXT("Die"));
 	}
 
+	// 길 찾기 기능 정지
+	ai->StopMovement();
 	Anim->AnimState = mState;
 }
 
@@ -204,5 +268,22 @@ void UEnemyFSM::OnAttackEnd()
 	Anim->bAttackPlay = false;
 }
 
+
+void UEnemyFSM::OnDieEnd2()
+{
+	bDieDone = true;
+}
+
+
+bool UEnemyFSM::GetRandomPositionInNavMesh( FVector centerLocation , float radius , FVector& dest )
+{
+	auto ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+	
+	FNavLocation loc;
+	bool result = ns->GetRandomReachablePointInRadius(centerLocation, radius, loc );
+
+	dest = loc.Location;
+	return result;
+}
 
 

@@ -13,3 +13,13 @@ void UEnemyAnim::AnimNotify_AttackEnd()
 		enemy->fsm->OnAttackEnd();
 	}
 }
+
+void UEnemyAnim::AnimNotify_DieEnd()
+{
+	// 넘어지는 애니메이션이 끝남
+	AEnemy* enemy = Cast<AEnemy>( TryGetPawnOwner() );
+	if( enemy != nullptr )
+	{
+		enemy->fsm->OnDieEnd();
+	}
+}
