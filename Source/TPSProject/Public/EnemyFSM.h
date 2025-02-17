@@ -10,11 +10,11 @@
 UENUM(BlueprintType)
 enum class EEnemyState : uint8
 {
-	Idle UMETA( DisplayName = "대기" ) ,
-	Move UMETA( DisplayName = "이동" ) ,
-	Attack UMETA( DisplayName = "공격" ) ,
-	Damage UMETA( DisplayName = "데미지" ) ,
-	Die	UMETA( DisplayName = "죽음" ) ,
+	Idle,
+	Move,
+	Attack,
+	Damage,
+	Die,
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -94,4 +94,14 @@ public:
 	// 아래로 사라지는 속도
 	UPROPERTY( EditAnywhere, Category = FSM )
 	float dieSpeed = 50.0f;
+
+
+	// 사용 중인 애니메이션 블루프린트
+	UPROPERTY()
+	class UEnemyAnim* Anim;
+
+
+	void OnAttackEnd();
+	
+
 };

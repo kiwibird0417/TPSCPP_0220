@@ -5,6 +5,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "TPSPlayer.h"
 #include "Enemy.h"
+
+#include "EnemyAnim.h"
 #include "TPSProject.h"
 #include "Components/CapsuleComponent.h"
 
@@ -33,6 +35,9 @@ void UEnemyFSM::BeginPlay()
 	
 	// 소유 객체 가져오기
 	me = Cast<AEnemy>(GetOwner());	
+
+	// UEnemyAnim 할당
+	Anim = Cast<UEnemyAnim>(me->GetMesh()->GetAnimInstance());
 }
 
 
@@ -69,6 +74,9 @@ void UEnemyFSM::IdleState()
 
 		// 경과 시간 초기화
 		currentTime = 0.0f;
+		
+		// 애니메이션 상태 동기화
+		Anim->AnimState = mState;
 	}
 }
 
@@ -89,6 +97,15 @@ void UEnemyFSM::MoveState()
 	{
 		// 공격 상태로 전환하고 싶다.
 		mState = EEnemyState::Attack;
+
+		// 애니메이션 상태 동기화
+		Anim->AnimState = mState;
+
+		// 공격 애니메이션 재생 활성화
+		Anim->bAttackPlay = true;
+
+		// 공격 상태 전환시 대기 시간 없이 바로 플레이가 되도록
+		currentTime = attackDelayTime;
 	}
 }
 
@@ -106,6 +123,7 @@ void UEnemyFSM::AttackState()
 
 		// 경과 시간 초기화
 		currentTime = 0.0f;
+		Anim->bAttackPlay = true;
 	}
 
 	// 타겟이 공격범위를 벗어나면 이동상태로 전환하고 싶다.
@@ -117,6 +135,9 @@ void UEnemyFSM::AttackState()
 	{
 		// 상태를 이동상태로 전환하고 싶다.
 		mState = EEnemyState::Move;
+
+		// 애니메이션 상태 동기화
+		Anim->AnimState = mState;
 	}
 }
 
@@ -133,6 +154,8 @@ void UEnemyFSM::DamageState()
 
 		// 경과 시간 초기화
 		currentTime = 0.0f;
+
+		Anim->AnimState = mState;
 	}
 }
 
@@ -169,7 +192,17 @@ void UEnemyFSM::OnDamageProcess()
 		// 상태를 죽음으로 전환
 		mState = EEnemyState::Die;
 		// 캡슐 충돌체 비활성화
-		me->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);		
+		me->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+
+	Anim->AnimState = mState;
 }
+
+
+void UEnemyFSM::OnAttackEnd()
+{
+	Anim->bAttackPlay = false;
+}
+
+
 
