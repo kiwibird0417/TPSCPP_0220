@@ -108,7 +108,7 @@ void UEnemyFSM::MoveState()
 
 	// 길 찾기를 위한 쿼리 생성
 	ai->BuildPathfindingQuery( req, query );
-
+	
 	// 길 찾기 결과를 가져오기
 	FPathFindingResult r = ns->FindPathSync(query);
 

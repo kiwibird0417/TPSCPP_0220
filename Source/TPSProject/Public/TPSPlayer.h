@@ -110,19 +110,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	class UInputMappingContext*	IMC_TPS;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	class UInputAction* IA_LookUp;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	class UInputAction* IA_Turn;
+	
 
 
 
-	// 좌우 회전 입력 처리
-	void Turn(const FInputActionValue& inputValue);
-
-	// 상하 회전 입력 처리
-	void LookUp(const FInputActionValue& inputValue);
 
 
 	// 사용자의 좌우 입력을 받아서 이동하고 싶다.
@@ -181,4 +172,7 @@ public:
 	// 총알 발사 사운드
 	UPROPERTY(EditDefaultsOnly, Category = Sound )
 	class USoundBase* BulletSound;
+
+	UPROPERTY(EditDefaultsOnly)
+	class UPlayerMoveComponent* MoveComp;
 };

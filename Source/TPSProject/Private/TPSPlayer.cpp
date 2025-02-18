@@ -12,6 +12,7 @@
 #include "EnemyFSM.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TPSPlayerAnimInstance.h"
+#include "PlayerMoveComponent.h"
 
 // Sets default values
 ATPSPlayer::ATPSPlayer()
@@ -109,6 +110,8 @@ ATPSPlayer::ATPSPlayer()
 
 	// 쭈그리기를 활성화 하고 싶다.
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
+
+	MoveComp = CreateDefaultSubobject<UPlayerMoveComponent>( TEXT("MoveComp") );
 }
 
 // Called when the game starts or when spawned
@@ -116,6 +119,7 @@ void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
+	MoveComp->me = this;
 	Anim = Cast<UTPSPlayerAnimInstance>(GetMesh()->GetAnimInstance());
 
 	auto pc = Cast<APlayerController>(Controller);
@@ -174,8 +178,10 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	auto PlayerInput = Cast<UEnhancedInputComponent>( PlayerInputComponent );
 	if( PlayerInput )
 	{
-		PlayerInput->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &ATPSPlayer::Turn);
-		PlayerInput->BindAction(IA_LookUp, ETriggerEvent::Triggered, this, &ATPSPlayer::LookUp);
+		// 컴포넌트에 입력 바인딩 처리를 하도록 호출
+		MoveComp->SetupInputBinding(PlayerInput);
+		
+
 
 		PlayerInput->BindAction(IA_Move, ETriggerEvent::Triggered, this, &ATPSPlayer::Move);
 
@@ -333,18 +339,6 @@ void ATPSPlayer::SniperAim( const FInputActionValue& inputValue )
 		// 일반 조준 UI 등록
 		_CrossHairUI->AddToViewport();
 	}
-}
-
-void ATPSPlayer::Turn( const FInputActionValue& inputValue )
-{
-	float value = inputValue.Get<float>();
-	AddControllerYawInput(value);
-}
-
-void ATPSPlayer::LookUp( const FInputActionValue& inputValue )
-{
-	float value = inputValue.Get<float>();
-	AddControllerPitchInput(value);
 }
 
 void ATPSPlayer::Move( const FInputActionValue& inputValue )
