@@ -43,6 +43,11 @@ public:
 	// 공격 애니메이션 재생 함수
 	void PlayAttackAnim();
 
+	//===============================================================================
+	//0220(목)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float Pitch;
+
 
 
 
