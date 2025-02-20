@@ -7,6 +7,23 @@
 #include "../../../../Plugins/EnhancedInput/Source/EnhancedInput/Public/InputActionValue.h"
 #include "TPSPlayer.generated.h"
 
+//0220(목) Delegate 추가
+//DECLARE_DELEGATE("함수명")	//F12 누르면 함수 설명으로 감, 기본 형태
+//DECLARE_MULTICAST_DELEGATE	//여러 개
+//DECLARE_DYNAMIC_DELEGATE		//BP, C++ 둘 다 사용
+
+
+DECLARE_DELEGATE(TestDelegate)
+//DECLARE_DELEGATE( FMyDelegate )
+//DECLARE_DELEGATE_OneParam(FDelegate_One, int32)	// 뒤에 반드시 인자, 없으면 위에거를 사용
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDelegate_DynamicMulti)
+
+
+// FireComp, MoveComp 다수라서...
+DECLARE_MULTICAST_DELEGATE_OneParam(FInputBindingDelegate, class UEnhancedInputComponent*)
+
+
+//-----------------------------------------------------
 UCLASS()
 class TPSPROJECT_API ATPSPlayer : public ACharacter
 {
@@ -15,6 +32,8 @@ class TPSPROJECT_API ATPSPlayer : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ATPSPlayer();
+	
+	FInputBindingDelegate InputBindingDelegate;
 
 protected:
 	// Called when the game starts or when spawned
