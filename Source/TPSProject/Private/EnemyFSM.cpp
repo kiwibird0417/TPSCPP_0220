@@ -11,6 +11,8 @@
 #include "EnemyAnim.h"
 #include "TPSProject.h"
 #include "Components/CapsuleComponent.h"
+#include "EnemyHPWidget.h"
+#include "Components/WidgetComponent.h"
 
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
@@ -43,6 +45,13 @@ void UEnemyFSM::BeginPlay()
 
 	// AIController 할당하기
 	ai = Cast<AAIController>( me->GetController() );
+
+	//---------------------------------------------------------
+	//0224 Enemy HP UI
+	// 체력을 풀로 채우고 싶다
+	HPWidget = Cast<UEnemyHPWidget>(me->HPComp->GetUserWidgetObject());
+	HPWidget->SetHPBar(hp, MaxHP);
+
 }
 
 
@@ -237,6 +246,10 @@ void UEnemyFSM::OnDamageProcess( int32 damage )
 	// 체력 감소
 	hp -= damage;
 
+	//0224(Enemy HP Widget)------------------------------------
+	HPWidget->SetHPBar(hp, MaxHP);
+
+	//---------------------------------------------------------
 	// 체력이 남아있는지 체크
 	if( hp > 0 )
 	{

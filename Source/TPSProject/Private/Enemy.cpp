@@ -3,6 +3,8 @@
 
 #include "Enemy.h"
 #include "EnemyFSM.h"
+#include "Components/WidgetComponent.h"
+#include "EnemyHPWidget.h"
 
 // Sets default values
 AEnemy::AEnemy()
@@ -26,9 +28,6 @@ AEnemy::AEnemy()
 		GetMesh()->SetRelativeScale3D( FVector( 0.8f ) );
 	}
 
-	// EnemyFSM 컴포넌트 추가
-	fsm = CreateDefaultSubobject<UEnemyFSM>( TEXT("FSM") );
-
 	// 애니메이션 블루프린트 할당하기
 	ConstructorHelpers::FClassFinder<UAnimInstance> TempAnim( TEXT("/Script/Engine.AnimBlueprint'/Game/NYS/Blueprints/Anim/ABP_Enemy.ABP_Enemy_C'") );
 
@@ -36,7 +35,26 @@ AEnemy::AEnemy()
 	{
 		GetMesh()->SetAnimInstanceClass(TempAnim.Class);
 	}
+	//======================================================================
+	//0224(월)
+	//UI UWidgetComponent
+	HPComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPComp"));
+	HPComp->SetupAttachment(RootComponent);
 
+	// Blueprint에서 불러올 경우, 뒤에 _C를 붙여주자.
+	ConstructorHelpers::FClassFinder<UEnemyHPWidget> TempWidget(TEXT("/Script/UMGEditor.WidgetBlueprint'/Game/NYS/Blueprints/WBP_EnemyHP.WBP_EnemyHP_C'"));
+	if( TempWidget.Succeeded() ) 
+	{
+		HPComp->SetWidgetClass(TempWidget.Class);
+
+		HPComp->SetDrawSize( FVector2D( 100.0f , 20.0f ) );
+		HPComp->SetRelativeLocation( FVector( 0.0f , 0.0f , 120.0f ) );
+	}
+
+	// EnemyFSM 컴포넌트 추가
+	fsm = CreateDefaultSubobject<UEnemyFSM>( TEXT( "FSM" ) );
+
+	//-----------------------------------------------------------------------------
 	// 월드에 배치되거나 스폰될 때 자동으로
 	// AIController 로부터 Possess 될 수 있도록 설정
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -53,6 +71,15 @@ void AEnemy::BeginPlay()
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// 카메라 방향으로 UI 회전(Billboard)
+	FVector Target = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->GetCameraLocation();
+	FVector Dir = Target - HPComp->GetComponentLocation();
+
+	// 해당 방향에 대한 회전값을 반환해줌.
+	FRotator Rot = Dir.ToOrientationRotator();
+
+	HPComp->SetWorldRotation(Rot);
 
 }
 

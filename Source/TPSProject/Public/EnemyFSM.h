@@ -84,9 +84,13 @@ public:
 	// 피격 알림 이벤트 함수
 	void OnDamageProcess(int32 damage);
 
-	// 체력
+	// 최대 체력
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = FSM)
-	int32 hp = 3;
+	int32 MaxHP = 3;
+
+	// 현재 체력
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = FSM)
+	int32 hp = MaxHP;
 
 	// 피격 대기 시간
 	UPROPERTY(EditAnywhere, Category = FSM)
@@ -123,4 +127,11 @@ public:
 	
 	// INLINE 함수로 이렇게도 쓸 수 있다
 	FORCEINLINE void OnDieEnd() {	bDieDone = true;	}
+
+	//-----------------------------------------------------------
+	//0224(월) Enemy HP UI 연결
+	UPROPERTY()
+	class UEnemyHPWidget* HPWidget;
+
+
 };
